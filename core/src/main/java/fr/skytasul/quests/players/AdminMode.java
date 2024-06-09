@@ -8,6 +8,7 @@ import fr.skytasul.quests.utils.ParticleEffect;
 import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +41,9 @@ public class AdminMode {
 		}
 	}
 
-	public static void broadcast(String message){
+	public static void broadcast(String message, Object... args) {
+		if (args != null && args.length > 0)
+			message = MessageFormat.format(message, args);
 		BeautyQuests.getInstance().getLoggerExpanded().getHandler().write("[ADMIN]: " + message);
 		for (CommandSender p : senders){
 			p.sendMessage("§e" + message);

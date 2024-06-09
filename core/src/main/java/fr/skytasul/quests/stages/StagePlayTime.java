@@ -7,8 +7,9 @@ import fr.skytasul.quests.api.editors.parsers.DurationParser.MinecraftTimeUnit;
 import fr.skytasul.quests.api.gui.ItemUtils;
 import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.options.QuestOption;
-import fr.skytasul.quests.api.players.PlayerAccount;
-import fr.skytasul.quests.api.players.PlayersManager;
+import fr.skytasul.quests.api.questers.PlayerQuester;
+import fr.skytasul.quests.api.questers.Quester;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
 import fr.skytasul.quests.api.requirements.RequirementList;
 import fr.skytasul.quests.api.stages.AbstractStage;
 import fr.skytasul.quests.api.stages.StageController;
@@ -20,7 +21,7 @@ import fr.skytasul.quests.api.utils.MinecraftVersion;
 import fr.skytasul.quests.api.utils.Utils;
 import fr.skytasul.quests.api.utils.XMaterial;
 import fr.skytasul.quests.api.utils.messaging.PlaceholderRegistry;
-import fr.skytasul.quests.api.utils.messaging.PlaceholdersContext.PlayerPlaceholdersContext;
+import fr.skytasul.quests.api.utils.messaging.PlaceholdersContext.QuesterPlaceholdersContext;
 import fr.skytasul.quests.api.utils.progress.HasProgress;
 import fr.skytasul.quests.api.utils.progress.ProgressPlaceholders;
 import org.bukkit.Bukkit;
@@ -29,6 +30,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -38,7 +40,7 @@ public class StagePlayTime extends AbstractStage implements HasProgress {
 	private final long playTicks;
 	private final TimeMode timeMode;
 
-	private Map<Player, BukkitTask> tasks = new HashMap<>();
+	private Map<TopLevelQuester, BukkitTask> tasks = new HashMap<>();
 
 	public StagePlayTime(StageController controller, long ticks, TimeMode timeMode) {
 		super(controller);
@@ -58,47 +60,50 @@ public class StagePlayTime extends AbstractStage implements HasProgress {
 	@Override
 	protected void createdPlaceholdersRegistry(@NotNull PlaceholderRegistry placeholders) {
 		super.createdPlaceholdersRegistry(placeholders);
-		placeholders.registerIndexedContextual("time_remaining_human", PlayerPlaceholdersContext.class,
-				context -> Utils.millisToHumanString(getPlayerAmount(context.getPlayerAccount())));
+		placeholders.registerIndexedContextual("time_remaining_human", QuesterPlaceholdersContext.class,
+				context -> Utils.millisToHumanString(getQuesterAmount(context.getQuester())));
 		ProgressPlaceholders.registerProgress(placeholders, "time", this);
 	}
 
-	private long getRemaining(PlayerAccount acc) {
+	private long getRemaining(TopLevelQuester quester) {
 		switch (timeMode) {
 			case ONLINE:
-				long remaining = getData(acc, "remainingTime", Long.class);
-				long lastJoin = getData(acc, "lastJoin", Long.class);
+				long remaining = getData(quester, "remainingTime", Long.class);
+				long lastJoin = getData(quester, "lastJoin", Long.class);
 				long playedTicks = (System.currentTimeMillis() - lastJoin) / 50;
 				return remaining - playedTicks;
 			case OFFLINE:
-				World world = Bukkit.getWorld(getData(acc, "worldUuid", UUID.class));
+				World world = Bukkit.getWorld(getData(quester, "worldUuid", UUID.class));
 				if (world == null) {
-					QuestsPlugin.getPlugin().getLoggerExpanded().warning("Cannot get remaining time of " + acc.getNameAndID()
-							+ " for " + controller + " because the world has changed.",
-							acc.getNameAndID() + hashCode() + "time",
-							15);
+					QuestsPlugin.getPlugin().getLoggerExpanded()
+							.warning("Cannot get remaining time of " + quester.getDebugName()
+									+ " for " + controller + " because the world has changed.",
+									quester.hashCode() + hashCode() + "time", 15);
 					return -1;
 				}
 
-				long startTime = getData(acc, "worldStartTime", Long.class);
+				long startTime = getData(quester, "worldStartTime", Long.class);
 				long elapsedTicks = world.getGameTime() - startTime;
 				return playTicks - elapsedTicks;
 			case REALTIME:
-				startTime = getData(acc, "startTime", Long.class);
+				startTime = getData(quester, "startTime", Long.class);
 				elapsedTicks = (System.currentTimeMillis() - startTime) / 50;
 				return playTicks - elapsedTicks;
 		}
 		throw new UnsupportedOperationException();
 	}
 
-	private void launchTask(Player p, long remaining) {
-		tasks.put(p, Bukkit.getScheduler().runTaskLater(BeautyQuests.getInstance(), () -> finishStage(p),
+	private void launchTask(TopLevelQuester quester, long remaining) {
+		if (tasks.containsKey(quester))
+			return;
+		tasks.put(quester,
+				Bukkit.getScheduler().runTaskLater(BeautyQuests.getInstance(), () -> getController().finishStage(quester),
 				remaining < 0 ? 0 : remaining));
 	}
 
 	@Override
-	public long getPlayerAmount(@NotNull PlayerAccount account) {
-		return getRemaining(account) * 50L;
+	public long getQuesterAmount(@NotNull Quester quester) {
+		return getRemaining(getTopLevelQuester(quester)) * 50L;
 	}
 
 	@Override
@@ -107,50 +112,55 @@ public class StagePlayTime extends AbstractStage implements HasProgress {
 	}
 
 	@Override
-	public void joined(Player p) {
-		super.joined(p);
-		if (timeMode == TimeMode.ONLINE)
-			updateObjective(p, "lastJoin", System.currentTimeMillis());
-		launchTask(p, getRemaining(PlayersManager.getPlayerAccount(p)));
+	public void joined(PlayerQuester quester) {
+		super.joined(quester);
+		TopLevelQuester topLevel = getTopLevelQuester(quester);
+		if (timeMode == TimeMode.ONLINE) {
+			if (!tasks.containsKey(topLevel))
+				getController().updateObjective(topLevel, "lastJoin", System.currentTimeMillis());
+			// if the quester is already in the tasks map, it means it has several players in it
+			// and someone already joined before => no need to update lastJoin
+		}
+		launchTask(topLevel, getRemaining(topLevel));
 	}
 
 	@Override
-	public void left(Player p) {
-		super.left(p);
-		BukkitTask task = tasks.remove(p);
+	public void left(PlayerQuester quester) {
+		super.left(quester);
+
+		TopLevelQuester topLevel = getTopLevelQuester(quester);
+
+		if (!isLast(topLevel, quester.getPlayer()))
+			return;
+
+		BukkitTask task = tasks.remove(topLevel);
 		if (task != null) {
-			cancelTask(p, task);
+			cancelTask(topLevel, task);
 		}else {
-			QuestsPlugin.getPlugin().getLoggerExpanded()
-					.warning("Unavailable task in \"Play Time\" stage " + toString() + " for player " + p.getName());
+			QuestsPlugin.getPlugin().getLoggerExpanded().warning("Unavailable task in \"Play Time\" stage {} for player {}",
+					toString(), topLevel.getDebugName());
 		}
 	}
 
-	private void cancelTask(Player p, BukkitTask task) {
+	private boolean isLast(TopLevelQuester quester, Player player) {
+		Collection<Player> online = quester.getOnlinePlayers();
+
+		if (online.isEmpty())
+			return true;
+		if (online.size() == 1)
+			return online.iterator().next().equals(player);
+		return false;
+	}
+
+	private void cancelTask(TopLevelQuester quester, BukkitTask task) {
 		task.cancel();
 		if (timeMode == TimeMode.ONLINE)
-			updateObjective(p, "remainingTime", getRemaining(PlayersManager.getPlayerAccount(p)));
+			getController().updateObjective(quester, "remainingTime", getRemaining(quester));
 	}
 
 	@Override
-	public void started(PlayerAccount acc) {
-		super.started(acc);
-
-		if (acc.isCurrent())
-			launchTask(acc.getPlayer(), playTicks);
-	}
-
-	@Override
-	public void ended(PlayerAccount acc) {
-		super.ended(acc);
-
-		if (acc.isCurrent())
-			tasks.remove(acc.getPlayer()).cancel();
-	}
-
-	@Override
-	public void initPlayerDatas(PlayerAccount acc, Map<String, Object> datas) {
-		super.initPlayerDatas(acc, datas);
+	public void initPlayerDatas(TopLevelQuester quester, Map<String, Object> datas) {
+		super.initPlayerDatas(quester, datas);
 		switch (timeMode) {
 			case ONLINE:
 				datas.put("remainingTime", playTicks);

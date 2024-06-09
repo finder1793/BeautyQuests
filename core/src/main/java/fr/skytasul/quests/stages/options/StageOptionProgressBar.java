@@ -1,20 +1,13 @@
 package fr.skytasul.quests.stages.options;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.bukkit.Bukkit;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
-import org.jetbrains.annotations.NotNull;
 import fr.skytasul.quests.api.BossBarManager.BQBossBar;
 import fr.skytasul.quests.api.QuestsAPI;
 import fr.skytasul.quests.api.QuestsConfiguration;
 import fr.skytasul.quests.api.QuestsPlugin;
 import fr.skytasul.quests.api.players.PlayerAccount;
 import fr.skytasul.quests.api.players.PlayersManager;
+import fr.skytasul.quests.api.questers.PlayerQuester;
+import fr.skytasul.quests.api.questers.Quester;
 import fr.skytasul.quests.api.stages.AbstractStage;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.stages.creation.StageCreation;
@@ -25,6 +18,15 @@ import fr.skytasul.quests.api.utils.messaging.PlaceholdersContext;
 import fr.skytasul.quests.api.utils.progress.HasProgress;
 import fr.skytasul.quests.api.utils.progress.ProgressBarConfig;
 import fr.skytasul.quests.api.utils.progress.ProgressPlaceholders;
+import org.bukkit.Bukkit;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StageOptionProgressBar<T extends AbstractStage & HasProgress> extends StageOption<T> {
 
@@ -60,32 +62,22 @@ public class StageOptionProgressBar<T extends AbstractStage & HasProgress> exten
 	}
 
 	@Override
-	public void stageStart(PlayerAccount acc, StageController stage) {
-		if (acc.isCurrent())
-			createBar(acc.getPlayer(), (T) stage.getStage());
+	public void stageJoin(PlayerQuester quester, StageController stage) {
+		createBar(quester.getPlayer(), (T) stage.getStage());
 	}
 
 	@Override
-	public void stageEnd(PlayerAccount acc, StageController stage) {
-		if (acc.isCurrent())
-			removeBar(acc.getPlayer());
+	public void stageLeave(PlayerQuester quester, StageController stage) {
+		removeBar(quester.getPlayer());
 	}
 
 	@Override
-	public void stageJoin(Player p, StageController stage) {
-		createBar(p, (T) stage.getStage());
-	}
-
-	@Override
-	public void stageLeave(Player p, StageController stage) {
-		removeBar(p);
-	}
-
-	@Override
-	public void stageUpdated(@NotNull Player player, @NotNull StageController stage) {
-		ProgressBar bar = bars.get(player);
-		if (bar != null)
-			bar.update();
+	public void stageUpdated(@NotNull Quester quester, @NotNull StageController stage) {
+		if (quester instanceof PlayerQuester) {
+			ProgressBar bar = bars.get(((PlayerQuester) quester).getPlayer());
+			if (bar != null)
+				bar.update();
+		}
 	}
 
 	@Override
@@ -160,7 +152,7 @@ public class StageOptionProgressBar<T extends AbstractStage & HasProgress> exten
 		public void update() {
 			timer();
 
-			long playerRemaining = progress.getPlayerAmount(acc);
+			long playerRemaining = progress.getQuesterAmount(acc);
 			if (playerRemaining >= 0 && playerRemaining <= totalAmount) {
 				bar.setProgress((totalAmount - playerRemaining) * 1D / totalAmount);
 			} else

@@ -1,9 +1,6 @@
 package fr.skytasul.quests.api.rewards;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import fr.skytasul.quests.api.QuestsPlugin;
@@ -45,6 +42,16 @@ public class RewardList extends ArrayList<@NotNull AbstractReward> {
 		if (interrupting != null)
 			throw interrupting;
 		return msg;
+	}
+
+	public Map<Player, List<String>> giveRewards(@NotNull Collection<Player> players) throws InterruptingBranchException {
+		Map<Player, List<String>> map = new HashMap<>();
+		for (Player player : players) {
+			List<String> given = giveRewards(player);
+			if (!given.isEmpty())
+				map.put(player, given);
+		}
+		return map;
 	}
 
 	public void attachQuest(@NotNull Quest quest) {

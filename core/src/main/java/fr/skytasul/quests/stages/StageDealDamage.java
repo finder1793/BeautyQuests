@@ -8,6 +8,8 @@ import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.options.QuestOption;
 import fr.skytasul.quests.api.players.PlayerAccount;
 import fr.skytasul.quests.api.players.PlayersManager;
+import fr.skytasul.quests.api.questers.Quester;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
 import fr.skytasul.quests.api.stages.AbstractStage;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.stages.StageDescriptionPlaceholdersContext;
@@ -50,8 +52,8 @@ public class StageDealDamage extends AbstractStage implements HasProgress, Liste
 	}
 
 	@Override
-	public void initPlayerDatas(PlayerAccount acc, Map<String, Object> datas) {
-		super.initPlayerDatas(acc, datas);
+	public void initPlayerDatas(TopLevelQuester quester, Map<String, Object> datas) {
+		super.initPlayerDatas(quester, datas);
 		datas.put("amount", damage);
 	}
 
@@ -83,13 +85,13 @@ public class StageDealDamage extends AbstractStage implements HasProgress, Liste
 		}
 	}
 
-	public double getPlayerAmountDouble(@NotNull PlayerAccount account) {
-		return getData(account, "amount", Double.class);
+	public double getQuesterAmountDouble(@NotNull Quester quester) {
+		return getData(quester, "amount", Double.class);
 	}
 
 	@Override
-	public long getPlayerAmount(@NotNull PlayerAccount account) {
-		return (long) Math.ceil(getPlayerAmountDouble(account));
+	public long getQuesterAmount(@NotNull Quester quester) {
+		return (long) Math.ceil(getQuesterAmountDouble(quester));
 	}
 
 	@Override
@@ -102,7 +104,7 @@ public class StageDealDamage extends AbstractStage implements HasProgress, Liste
 		super.createdPlaceholdersRegistry(placeholders);
 		ProgressPlaceholders.registerProgress(placeholders, "damage", this);
 		placeholders.registerIndexedContextual("damage_remaining", StageDescriptionPlaceholdersContext.class,
-				context -> Long.toString(getPlayerAmount(context.getPlayerAccount())));
+				context -> Long.toString(getQuesterAmount(context.getQuester())));
 		placeholders.registerIndexed("target_mobs", getTargetMobsString(targetMobs));
 	}
 

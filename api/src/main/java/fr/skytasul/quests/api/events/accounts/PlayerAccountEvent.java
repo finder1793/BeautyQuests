@@ -4,7 +4,7 @@ import fr.skytasul.quests.api.players.PlayerAccount;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.util.Objects;
 
 public abstract class PlayerAccountEvent extends Event {
 
@@ -14,15 +14,15 @@ public abstract class PlayerAccountEvent extends Event {
 		this.account = account;
 	}
 
-	public boolean isAccountCurrent() {
-		return account.isCurrent();
+	public boolean isAccountOnline() {
+		return account.isOnline();
 	}
 
-	public @Nullable Player getPlayer() {
-		if (!account.isCurrent())
-			throw new IllegalStateException("Account " + account.debugName() + " is not currently used");
+	public @NotNull Player getPlayer() {
+		if (!account.isOnline())
+			throw new IllegalStateException("Account " + account.getDebugName() + " is not currently used");
 
-		return account.getPlayer();
+		return Objects.requireNonNull(account.getPlayer());
 	}
 
 	public @NotNull PlayerAccount getPlayerAccount() {

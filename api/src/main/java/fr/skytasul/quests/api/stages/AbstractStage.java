@@ -1,8 +1,11 @@
 package fr.skytasul.quests.api.stages;
 
 import fr.skytasul.quests.api.QuestsConfiguration;
-import fr.skytasul.quests.api.players.PlayerAccount;
 import fr.skytasul.quests.api.players.PlayersManager;
+import fr.skytasul.quests.api.questers.PlayerQuester;
+import fr.skytasul.quests.api.questers.Quester;
+import fr.skytasul.quests.api.questers.QuesterProvider;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
 import fr.skytasul.quests.api.quests.Quest;
 import fr.skytasul.quests.api.quests.branches.QuestBranch;
 import fr.skytasul.quests.api.requirements.RequirementList;
@@ -11,6 +14,8 @@ import fr.skytasul.quests.api.serializable.SerializableCreator;
 import fr.skytasul.quests.api.stages.options.StageOption;
 import fr.skytasul.quests.api.utils.AutoRegistered;
 import fr.skytasul.quests.api.utils.messaging.HasPlaceholders;
+import fr.skytasul.quests.api.utils.messaging.MessageType;
+import fr.skytasul.quests.api.utils.messaging.MessageUtils;
 import fr.skytasul.quests.api.utils.messaging.PlaceholderRegistry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -21,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @AutoRegistered
-public abstract class AbstractStage implements HasPlaceholders {
+public abstract class AbstractStage implements QuesterProvider, HasPlaceholders {
 
 	protected final @NotNull StageController controller;
 
@@ -91,7 +96,7 @@ public abstract class AbstractStage implements HasPlaceholders {
 		this.customText = message;
 	}
 
-	public boolean sendStartMessage(){
+	public boolean shouldSendStartMessage() {
 		return startMessage == null && QuestsConfiguration.getConfig().getQuestsConfig().playerStageStartMessage();
 	}
 
@@ -123,72 +128,82 @@ public abstract class AbstractStage implements HasPlaceholders {
 		return validationRequirements.allMatch(player, msg);
 	}
 
+	@Override
+	public final @NotNull TopLevelQuester getTopLevelQuester(@NotNull Quester quester) {
+		return getQuest().getQuesterProvider().getTopLevelQuester(quester);
+	}
+
 	/**
-	 * Called internally when a player finish stage's objectives
+	 * To be used internally when a player finishes the stage.<br>
+	 * The player must have this stage started!
 	 *
-	 * @param player Player who finish the stage
+	 * @param player Player which finishes the stage
 	 */
 	protected final void finishStage(@NotNull Player player) {
-		controller.finishStage(player);
+		controller.finishStage(PlayersManager.getPlayerAccount(player));
 	}
 
 	/**
 	 * Called internally to test if a player has the stage started
 	 *
 	 * @param player Player to test
-	 * @see QuestBranch#hasStageLaunched(PlayerAccount, AbstractStage)
+	 * @see QuestBranch#hasStageLaunched(Quester, StageController)
 	 */
 	protected final boolean hasStarted(@NotNull Player player) {
-		return controller.hasStarted(PlayersManager.getPlayerAccount(player));
+		return controller.hasStarted(getTopLevelQuester(player));
 	}
 
 	/**
 	 * Called when the stage starts (player can be offline)
 	 * @param acc PlayerAccount for which the stage starts
 	 */
-	public void started(@NotNull PlayerAccount acc) {}
+	public void started(@NotNull TopLevelQuester quester) {}
 
 	/**
 	 * Called when the stage ends (player can be offline)
 	 * @param acc PlayerAccount for which the stage ends
 	 */
-	public void ended(@NotNull PlayerAccount acc) {}
+	public void ended(@NotNull TopLevelQuester quester) {}
 
 	/**
 	 * Called when an account with this stage launched joins
 	 */
-	public void joined(@NotNull Player player) {}
+	public void joined(@NotNull PlayerQuester quester) {}
 
 	/**
 	 * Called when an account with this stage launched leaves
 	 */
-	public void left(@NotNull Player player) {}
+	public void left(@NotNull PlayerQuester quester) {}
 
-	public void initPlayerDatas(@NotNull PlayerAccount acc, @NotNull Map<@NotNull String, @Nullable Object> datas) {}
+	public void initPlayerDatas(@NotNull TopLevelQuester quester, @NotNull Map<@NotNull String, @Nullable Object> datas) {}
 
 	public abstract @NotNull String getDefaultDescription(@NotNull StageDescriptionPlaceholdersContext context);
 
-	protected final void updateObjective(@NotNull Player p, @NotNull String dataKey, @Nullable Object dataValue) {
-		controller.updateObjective(p, dataKey, dataValue);
+	protected final void updateObjective(@NotNull Player player, @NotNull String dataKey, @Nullable Object dataValue) {
+		controller.updateObjective(getTopLevelQuester(player), dataKey, dataValue);
 	}
 
 	@Deprecated
-	protected final <T> @Nullable T getData(@NotNull Player p, @NotNull String dataKey) {
-		return getData(PlayersManager.getPlayerAccount(p), dataKey);
+	protected final <T> @Nullable T getData(@NotNull Player player, @NotNull String dataKey) {
+		return getData(getTopLevelQuester(player), dataKey);
 	}
 
 	@Deprecated
-	protected final <T> @Nullable T getData(@NotNull PlayerAccount acc, @NotNull String dataKey) {
-		return getData(acc, dataKey, null);
+	protected final <T> @Nullable T getData(@NotNull Quester quester, @NotNull String dataKey) {
+		return getData(quester, dataKey, null);
 	}
 
-	protected final <T> @Nullable T getData(@NotNull Player p, @NotNull String dataKey, @NotNull Class<T> dataType) {
-		return getData(PlayersManager.getPlayerAccount(p), dataKey, dataType);
+	protected final <T> @Nullable T getData(@NotNull Player player, @NotNull String dataKey, @NotNull Class<T> dataType) {
+		return getData(getTopLevelQuester(player), dataKey, dataType);
 	}
 
-	protected final <T> @Nullable T getData(@NotNull PlayerAccount acc, @NotNull String dataKey,
+	protected final <T> @Nullable T getData(@NotNull Quester quester, @NotNull String dataKey,
 			@NotNull Class<T> dataType) {
-		return controller.getData(acc, dataKey, dataType);
+		return controller.getData(quester, dataKey, dataType);
+	}
+
+	public void sendStartMessage(@NotNull Player player) {
+		MessageUtils.sendMessage(player, getStartMessage(), MessageType.DefaultMessageType.OFF);
 	}
 
 	/**

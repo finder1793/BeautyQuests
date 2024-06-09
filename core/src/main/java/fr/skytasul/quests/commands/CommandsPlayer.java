@@ -1,8 +1,5 @@
 package fr.skytasul.quests.commands;
 
-import java.util.Objects;
-import java.util.Optional;
-import org.bukkit.entity.Player;
 import fr.skytasul.quests.api.QuestsPlugin;
 import fr.skytasul.quests.api.commands.revxrsal.annotation.Default;
 import fr.skytasul.quests.api.commands.revxrsal.annotation.Subcommand;
@@ -14,10 +11,13 @@ import fr.skytasul.quests.api.commands.revxrsal.exception.InvalidSubcommandExcep
 import fr.skytasul.quests.api.commands.revxrsal.orphan.OrphanCommand;
 import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.players.PlayerAccount;
-import fr.skytasul.quests.api.players.PlayerQuestDatas;
 import fr.skytasul.quests.api.players.PlayersManager;
 import fr.skytasul.quests.api.quests.Quest;
+import fr.skytasul.quests.api.quests.QuestDatas;
 import fr.skytasul.quests.rewards.CheckpointReward;
+import org.bukkit.entity.Player;
+import java.util.Objects;
+import java.util.Optional;
 
 public class CommandsPlayer implements OrphanCommand {
 
@@ -40,7 +40,7 @@ public class CommandsPlayer implements OrphanCommand {
 	public void checkpoint(Player player, Quest quest) {
 		PlayerAccount account = PlayersManager.getPlayerAccount(player);
 		if (account.hasQuestDatas(quest)) {
-			PlayerQuestDatas datas = account.getQuestDatas(quest);
+			QuestDatas datas = account.getQuestDatas(quest);
 
 			Optional<CheckpointReward> optionalCheckpoint = datas.getQuestFlowStages()
 					.map(controller -> controller.getStage().getRewards().stream()

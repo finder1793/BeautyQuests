@@ -27,7 +27,7 @@ import fr.skytasul.quests.api.npcs.BqNpc;
 import fr.skytasul.quests.api.npcs.dialogs.Dialog;
 import fr.skytasul.quests.api.npcs.dialogs.DialogRunner;
 import fr.skytasul.quests.api.options.QuestOption;
-import fr.skytasul.quests.api.players.PlayerAccount;
+import fr.skytasul.quests.api.questers.PlayerQuester;
 import fr.skytasul.quests.api.stages.AbstractStage;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.stages.StageDescriptionPlaceholdersContext;
@@ -219,9 +219,9 @@ public class StageNPC extends AbstractStage implements Locatable.PreciseLocatabl
 	}
 
 	@Override
-	public void joined(Player p) {
-		super.joined(p);
-		cachePlayer(p);
+	public void joined(@NotNull PlayerQuester quester) {
+		super.joined(quester);
+		cachePlayer(quester.getPlayer());
 	}
 
 	private void cachePlayer(Player p) {
@@ -242,31 +242,11 @@ public class StageNPC extends AbstractStage implements Locatable.PreciseLocatabl
 	}
 
 	@Override
-	public void left(Player p) {
-		super.left(p);
-		uncachePlayer(p);
+	public void left(@NotNull PlayerQuester quester) {
+		super.left(quester);
+		uncachePlayer(quester.getPlayer());
 		if (dialogRunner != null)
-			dialogRunner.removePlayer(p);
-	}
-
-	@Override
-	public void started(PlayerAccount acc) {
-		super.started(acc);
-		if (acc.isCurrent()) {
-			Player p = acc.getPlayer();
-			cachePlayer(p);
-		}
-	}
-
-	@Override
-	public void ended(PlayerAccount acc) {
-		super.ended(acc);
-		if (acc.isCurrent()) {
-			Player p = acc.getPlayer();
-			if (dialogRunner != null)
-				dialogRunner.removePlayer(p);
-			uncachePlayer(p);
-		}
+			dialogRunner.removePlayer(quester.getPlayer());
 	}
 
 	@Override

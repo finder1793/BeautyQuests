@@ -7,9 +7,9 @@ import fr.skytasul.quests.api.gui.close.StandardCloseBehavior;
 import fr.skytasul.quests.api.gui.templates.PagedGUI;
 import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.npcs.dialogs.Message;
-import fr.skytasul.quests.api.players.PlayerAccount;
-import fr.skytasul.quests.api.players.PlayerQuestDatas;
+import fr.skytasul.quests.api.questers.Quester;
 import fr.skytasul.quests.api.quests.Quest;
+import fr.skytasul.quests.api.quests.QuestDatas;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.stages.types.Dialogable;
 import fr.skytasul.quests.api.utils.ChatColorUtils;
@@ -28,21 +28,17 @@ import java.util.stream.Stream;
 public class DialogHistoryGUI extends PagedGUI<WrappedDialogable> {
 
 	private final Runnable end;
-	private final Player player;
 
-	public DialogHistoryGUI(PlayerAccount acc, Quest quest, Runnable end) {
+	public DialogHistoryGUI(Quester quester, Quest quest, Runnable end) {
 		super(quest.getName(), DyeColor.LIGHT_BLUE, Collections.emptyList(), x -> end.run(), null);
 		this.end = end;
 
-		Validate.isTrue(acc.hasQuestDatas(quest), "Player must have started the quest");
-		Validate.isTrue(acc.isCurrent(), "Player must be online");
-
-		player = acc.getPlayer();
+		Validate.isTrue(quester.hasQuestDatas(quest), "Player must have started the quest");
 
 		if (quest.hasOption(OptionStartDialog.class))
 			objects.add(new WrappedDialogable(quest.getOption(OptionStartDialog.class)));
 
-		getDialogableStream(acc.getQuestDatas(quest), quest)
+		getDialogableStream(quester.getQuestDatas(quest), quest)
 			.map(WrappedDialogable::new)
 			.forEach(objects::add);
 	}
@@ -78,7 +74,7 @@ public class DialogHistoryGUI extends PagedGUI<WrappedDialogable> {
 		return StandardCloseBehavior.NOTHING;
 	}
 
-	public static Stream<Dialogable> getDialogableStream(PlayerQuestDatas datas, Quest quest) {
+	public static Stream<Dialogable> getDialogableStream(QuestDatas datas, Quest quest) {
 		return datas.getQuestFlowStages()
 				.map(StageController::getStage)
 				.filter(Dialogable.class::isInstance)

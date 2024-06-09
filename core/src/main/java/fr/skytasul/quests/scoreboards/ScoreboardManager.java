@@ -1,8 +1,15 @@
 package fr.skytasul.quests.scoreboards;
 
-import java.io.File;
-import java.util.*;
-import java.util.function.Consumer;
+import fr.mrmicky.fastboard.FastBoard;
+import fr.skytasul.quests.BeautyQuests;
+import fr.skytasul.quests.api.QuestsConfiguration;
+import fr.skytasul.quests.api.QuestsHandler;
+import fr.skytasul.quests.api.QuestsPlugin;
+import fr.skytasul.quests.api.events.accounts.PlayerAccountJoinEvent;
+import fr.skytasul.quests.api.events.accounts.PlayerAccountLeaveEvent;
+import fr.skytasul.quests.api.questers.PlayerQuester;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
+import fr.skytasul.quests.api.quests.Quest;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -12,15 +19,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import fr.mrmicky.fastboard.FastBoard;
-import fr.skytasul.quests.BeautyQuests;
-import fr.skytasul.quests.api.QuestsConfiguration;
-import fr.skytasul.quests.api.QuestsHandler;
-import fr.skytasul.quests.api.QuestsPlugin;
-import fr.skytasul.quests.api.events.accounts.PlayerAccountJoinEvent;
-import fr.skytasul.quests.api.events.accounts.PlayerAccountLeaveEvent;
-import fr.skytasul.quests.api.players.PlayerAccount;
-import fr.skytasul.quests.api.quests.Quest;
+import java.io.File;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class ScoreboardManager implements Listener, QuestsHandler {
 
@@ -190,34 +191,35 @@ public class ScoreboardManager implements Listener, QuestsHandler {
 	}
 
 	@Override
-	public void questFinish(PlayerAccount acc, Quest quest) {
+	public void questFinish(TopLevelQuester acc, Quest quest) {
 		if (!quest.isScoreboardEnabled()) return;
 		questEvent(acc, x -> x.questRemove(quest));
 	}
 
 	@Override
-	public void questReset(PlayerAccount acc, Quest quest) {
+	public void questReset(TopLevelQuester acc, Quest quest) {
 		if (!quest.isScoreboardEnabled()) return;
 		questEvent(acc, x -> x.questRemove(quest));
 	}
 
 	@Override
-	public void questUpdated(PlayerAccount acc, Quest quest) {
+	public void questUpdated(TopLevelQuester acc, Quest quest) {
 		if (!quest.isScoreboardEnabled()) return;
 		questEvent(acc, x -> x.setShownQuest(quest, true));
 	}
 
 	@Override
-	public void questStart(PlayerAccount acc, Quest quest) {
+	public void questStart(TopLevelQuester acc, Quest quest) {
 		if (!quest.isScoreboardEnabled()) return;
 		questEvent(acc, x -> x.questAdd(quest));
 	}
 
-	private void questEvent(PlayerAccount acc, Consumer<Scoreboard> consumer) {
-		if (acc.isCurrent()) {
-			Scoreboard scoreboard = scoreboards.get(acc.getPlayer());
-			if (scoreboard != null) consumer.accept(scoreboard);
-		}
+	private void questEvent(TopLevelQuester quester, Consumer<Scoreboard> consumer) {
+		quester.getSubQuesters().stream()
+				.filter(PlayerQuester::isOnline)
+				.map(sub -> scoreboards.get(sub.getPlayer()))
+				.filter(Objects::nonNull)
+				.forEach(consumer);
 	}
 
 }

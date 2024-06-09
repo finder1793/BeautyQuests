@@ -1,24 +1,30 @@
 package fr.skytasul.quests.api.players;
 
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
+import fr.skytasul.quests.api.data.SavableData;
+import fr.skytasul.quests.api.pools.QuestPool;
+import fr.skytasul.quests.api.questers.PlayerQuester;
+import fr.skytasul.quests.api.utils.messaging.HasPlaceholders;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
-import fr.skytasul.quests.api.data.SavableData;
-import fr.skytasul.quests.api.pools.QuestPool;
-import fr.skytasul.quests.api.quests.Quest;
-import fr.skytasul.quests.api.utils.messaging.HasPlaceholders;
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
-public interface PlayerAccount extends HasPlaceholders {
+public interface PlayerAccount extends PlayerQuester, HasPlaceholders {
 
 	/**
 	 * @return if this account is currently used by the player (if true, {@link #getPlayer()} cannot
 	 *         return a null player)
 	 */
-	public boolean isCurrent();
+	@Override
+	public boolean isOnline();
+
+	@Override
+	default @NotNull PlayerAccount getAccount() {
+		return this;
+	}
 
 	/**
 	 * @return the OfflinePlayer instance attached to this account (no matter if the player is online or
@@ -28,21 +34,10 @@ public interface PlayerAccount extends HasPlaceholders {
 
 	/**
 	 * @return the Player instance who own this account. If the account is not which in use by the
-	 *         player ({@link #isCurrent()}), this will return null.
+	 *         player ({@link #isOnline()}), this will return null.
 	 */
+	@Override
 	public @Nullable Player getPlayer();
-
-	public boolean hasQuestDatas(@NotNull Quest quest);
-
-	public @Nullable PlayerQuestDatas getQuestDatasIfPresent(@NotNull Quest quest);
-
-	public @NotNull PlayerQuestDatas getQuestDatas(@NotNull Quest quest);
-
-	public @NotNull CompletableFuture<PlayerQuestDatas> removeQuestDatas(@NotNull Quest quest);
-
-	public @NotNull CompletableFuture<PlayerQuestDatas> removeQuestDatas(int id);
-
-	public @UnmodifiableView @NotNull Collection<@NotNull PlayerQuestDatas> getQuestsDatas();
 
 	public boolean hasPoolDatas(@NotNull QuestPool pool);
 
@@ -64,5 +59,7 @@ public interface PlayerAccount extends HasPlaceholders {
 
 	public @NotNull String getNameAndID();
 
-	public @NotNull String debugName();
+	@Override
+	public @NotNull String getDebugName();
+
 }

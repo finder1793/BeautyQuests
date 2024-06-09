@@ -1,24 +1,5 @@
 package fr.skytasul.quests;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.inventory.CraftItemEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ComplexRecipe;
-import org.bukkit.inventory.ItemStack;
 import fr.skytasul.quests.api.QuestsAPI;
 import fr.skytasul.quests.api.QuestsConfiguration;
 import fr.skytasul.quests.api.QuestsPlugin;
@@ -39,6 +20,25 @@ import fr.skytasul.quests.options.OptionAutoQuest;
 import fr.skytasul.quests.players.PlayerAccountImplementation;
 import fr.skytasul.quests.structure.QuestImplementation;
 import fr.skytasul.quests.utils.compatibility.Paper;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ComplexRecipe;
+import org.bukkit.inventory.ItemStack;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class QuestsListener implements Listener{
 
@@ -69,9 +69,9 @@ public class QuestsListener implements Listener{
 		for (Quest qu : quests) {
 			QuestImplementation quest = (QuestImplementation) qu;
 			try {
-				if (!quest.testRequirements(p, acc, false)) {
+				if (!quest.testRequirements(p).isSuccess()) {
 					requirements.add(quest);
-				} else if (!quest.testTimer(acc, false)) {
+				} else if (!quest.testTimer(acc).isSuccess()) {
 					timer.add(quest);
 				} else
 					launcheable.add(quest);
@@ -115,9 +115,12 @@ public class QuestsListener implements Listener{
 					.debug("NPC " + npc.getId() + ": " + startablePools.size() + " pools, result: " + pool.give(p));
 		}else {
 			if (!timer.isEmpty()) {
-				timer.get(0).testTimer(acc, true);
+				timer.get(0).testTimer(acc).isSuccessOrSendMessage(p);
 			}else if (!requirements.isEmpty()) {
-				requirements.get(0).testRequirements(p, acc, true);
+				if (QuestsConfiguration.getConfig().getQuestsConfig().requirementReasonOnMultipleQuests()
+						|| quests.size() == 1) {
+					requirements.get(0).testRequirements(p).isSuccessOrSendMessage(p);
+				}
 			}else {
 				npc.getPools().iterator().next().give(p)
 						.thenAccept(result -> MessageUtils.sendMessage(p, result, MessageType.DefaultMessageType.PREFIXED));

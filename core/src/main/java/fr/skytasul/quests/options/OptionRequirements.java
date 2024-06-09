@@ -1,10 +1,5 @@
 package fr.skytasul.quests.options;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import fr.skytasul.quests.api.QuestsAPI;
 import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.objects.QuestObjectsRegistry;
@@ -18,6 +13,11 @@ import fr.skytasul.quests.api.utils.PlayerListCategory;
 import fr.skytasul.quests.api.utils.XMaterial;
 import fr.skytasul.quests.api.utils.messaging.MessageUtils;
 import fr.skytasul.quests.api.utils.messaging.PlaceholderRegistry;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class OptionRequirements extends QuestOptionObject<AbstractRequirement, RequirementCreator, RequirementList>
 		implements QuestDescriptionProvider {
@@ -59,15 +59,16 @@ public class OptionRequirements extends QuestOptionObject<AbstractRequirement, R
 
 	@Override
 	public List<String> provideDescription(QuestDescriptionContext context) {
-		if (!context.getPlayerAccount().isCurrent()) return null;
+		if (!context.getQuester().isOnline()) // TODO rework this condition
+			return null;
 		if (!context.getDescriptionOptions().showRequirements()) return null;
 		if (context.getCategory() != PlayerListCategory.NOT_STARTED) return null;
 
 		List<String> requirements = getValue().stream()
 				.map(x -> {
-					String description = x.getDescription(context.getPlayerAccount().getPlayer());
+					String description = x.getDescription(context.getQuester().getPlayer());
 					if (description != null)
-						description = MessageUtils.format(x.isValid() && x.test(context.getPlayerAccount().getPlayer())
+						description = MessageUtils.format(x.isValid() && x.test(context.getQuester().getPlayer())
 								? context.getDescriptionOptions().getRequirementsValid()
 								: context.getDescriptionOptions().getRequirementsInvalid(),
 								PlaceholderRegistry.of("requirement_description", description));

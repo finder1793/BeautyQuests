@@ -184,14 +184,14 @@ public abstract class AbstractPlayersManager implements PlayersManager {
 		if (!request.getAccount().getOfflinePlayer().equals(p)) {
 			QuestsPlugin.getPlugin().getLogger()
 					.severe("UUID mismatch between player " + p.getName() + " (" + p.getUniqueId() + ") and loaded account "
-							+ request.getAccount().debugName());
+							+ request.getAccount().getDebugName());
 			return false;
 		}
 
 		cachedAccounts.put(p, request.getAccount());
 
 		String loadMessage =
-				"Completed load of " + p.getName() + " (" + request.getAccount().debugName() + ") datas within "
+				"Completed load of " + p.getName() + " (" + request.getAccount().getDebugName() + ") datas within "
 						+ (System.currentTimeMillis() - time) + " ms (" + request.getAccount().getQuestsDatas().size()
 						+ " quests, " + request.getAccount().getPoolDatas().size() + " pools)";
 

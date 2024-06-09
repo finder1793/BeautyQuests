@@ -90,7 +90,8 @@ public class PlayerListGUI extends PagedGUI<Quest> {
 
 			case NOT_STARTED:
 				quests = QuestsAPI.getAPI().getQuestsManager().getQuestsNotStarted(acc, hide, true).stream()
-						.filter(quest -> !quest.isHiddenWhenRequirementsNotMet() || quest.canStart(acc.getPlayer(), false))
+						.filter(quest -> !acc.isOnline() || !quest.isHiddenWhenRequirementsNotMet()
+								|| quest.testStart(acc.getPlayer()).isSuccess())
 						.collect(Collectors.toList());
 				break;
 
@@ -174,10 +175,10 @@ public class PlayerListGUI extends PagedGUI<Quest> {
 		if (cat == PlayerListCategory.NOT_STARTED) {
 			if (!qu.getOptionValueOrDef(OptionStartable.class))
 				return;
-			if (!acc.isCurrent())
+			if (!acc.isOnline())
 				return;
 			Player target = acc.getPlayer();
-			if (qu.canStart(target, true)) {
+			if (qu.testStart(target).isSuccessOrSendMessage(player)) {
 				close();
 				qu.attemptStart(target);
 			}
@@ -192,7 +193,8 @@ public class PlayerListGUI extends PagedGUI<Quest> {
 				if (QuestsConfiguration.getConfig().getQuestsMenuConfig().allowPlayerCancelQuest()
 						&& cat == PlayerListCategory.IN_PROGRESS && qu.isCancellable()) {
 					QuestsPlugin.getPlugin().getGuiManager().getFactory()
-							.createConfirmation(() -> qu.cancelPlayer(acc), this::reopen, Lang.INDICATION_CANCEL.format(qu))
+							.createConfirmation(() -> qu.cancel(qu.getQuesterProvider().getTopLevelQuester(acc)),
+									this::reopen, Lang.INDICATION_CANCEL.format(qu))
 							.open(player);
 				}
 			}

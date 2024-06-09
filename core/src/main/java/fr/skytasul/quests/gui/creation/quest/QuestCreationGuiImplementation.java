@@ -1,19 +1,9 @@
 package fr.skytasul.quests.gui.creation.quest;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.api.QuestsAPI;
 import fr.skytasul.quests.api.QuestsPlugin;
-import fr.skytasul.quests.api.events.QuestCreateEvent;
+import fr.skytasul.quests.api.events.quests.QuestCreateEvent;
 import fr.skytasul.quests.api.gui.ItemUtils;
 import fr.skytasul.quests.api.gui.close.StandardCloseBehavior;
 import fr.skytasul.quests.api.gui.layout.LayoutedButton;
@@ -44,6 +34,16 @@ import fr.skytasul.quests.structure.QuestImplementation;
 import fr.skytasul.quests.structure.StageControllerImplementation;
 import fr.skytasul.quests.utils.QuestUtils;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 public class QuestCreationGuiImplementation extends LayoutedGUI implements QuestCreationGui {
 
@@ -184,7 +184,7 @@ public class QuestCreationGuiImplementation extends LayoutedGUI implements Quest
 		qu.getBranchesManager().addBranch(mainBranch);
 		boolean failure = loadBranch(p, mainBranch, session.getStagesGUI());
 
-		QuestCreateEvent event = new QuestCreateEvent(p, qu, session.isEdition());
+		QuestCreateEvent event = new QuestCreateEvent(qu, p, session.isEdition());
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isCancelled()){
 			qu.delete(true, false);
@@ -238,9 +238,9 @@ public class QuestCreationGuiImplementation extends LayoutedGUI implements Quest
 				if (datas.getBranch() == -1) continue;
 				QuestBranchImplementation branch = qu.getBranchesManager().getBranch(datas.getBranch());
 				if (datas.isInEndingStages()) {
-					branch.getEndingStages().forEach(stage -> stage.getStage().getStage().joined(p));
+					branch.getEndingStages().forEach(stage -> stage.getStage().getStage().joined(account));
 				} else
-					branch.getRegularStage(datas.getStage()).getStage().joined(p);
+					branch.getRegularStage(datas.getStage()).getStage().joined(account);
 			}
 		}
 	}

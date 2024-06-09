@@ -1,13 +1,17 @@
-package fr.skytasul.quests.api.players;
+package fr.skytasul.quests.api.quests;
 
-import java.util.Map;
-import java.util.stream.Stream;
+import fr.skytasul.quests.api.questers.Quester;
+import fr.skytasul.quests.api.stages.StageController;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import fr.skytasul.quests.api.quests.Quest;
-import fr.skytasul.quests.api.stages.StageController;
+import java.util.Map;
+import java.util.stream.Stream;
 
-public interface PlayerQuestDatas {
+public interface QuestDatas {
+	// TODO dissociate editable and readonly QuestDatas between TopLevel and not
+
+	@NotNull
+	Quester getQuester();
 
 	int getQuestID();
 

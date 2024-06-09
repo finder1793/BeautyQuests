@@ -1,17 +1,5 @@
 package fr.skytasul.quests.structure.pools;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.api.QuestsPlugin;
 import fr.skytasul.quests.api.gui.ItemUtils;
@@ -30,6 +18,18 @@ import fr.skytasul.quests.api.utils.messaging.PlaceholderRegistry;
 import fr.skytasul.quests.npcs.BqNpcImplementation;
 import fr.skytasul.quests.players.PlayerPoolDatasImplementation;
 import fr.skytasul.quests.utils.QuestUtils;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public class QuestPoolImplementation implements Comparable<QuestPoolImplementation>, QuestPool {
 
@@ -204,10 +204,10 @@ public class QuestPoolImplementation implements Comparable<QuestPoolImplementati
 				.filter(quest -> !datas.getCompletedQuests().contains(quest.getId())).collect(Collectors.toList()) : quests;
 		if (notDoneQuests.isEmpty()) { // all quests completed
 			if (!redoAllowed) return false;
-			return quests.stream().anyMatch(quest -> quest.isRepeatable() && quest.canStart(p, false));
+			return quests.stream().anyMatch(quest -> quest.isRepeatable() && quest.testStart(p).isSuccess());
 		}else if (acc.getQuestsDatas().stream().filter(quest -> quest.hasStarted() && quests.contains(quest.getQuest())).count() >= maxQuests) return false;
 
-		return notDoneQuests.stream().anyMatch(quest -> quest.canStart(p, false));
+		return notDoneQuests.stream().anyMatch(quest -> quest.testStart(p).isSuccess());
 	}
 
 	@Override
@@ -271,7 +271,8 @@ public class QuestPoolImplementation implements Comparable<QuestPoolImplementati
 			notStarted = replenishQuests(datas);
 		}
 
-		List<Quest> available = notStarted.stream().filter(quest -> quest.canStart(p, false)).collect(Collectors.toList());
+		List<Quest> available =
+				notStarted.stream().filter(quest -> quest.testStart(p).isSuccess()).collect(Collectors.toList());
 		// at this point, "available" contains all quests that the player has not yet completed, that it is
 		// not currently doing and that meet the requirements to launch
 
@@ -285,7 +286,8 @@ public class QuestPoolImplementation implements Comparable<QuestPoolImplementati
 					if (exception != null) {
 						future.completeExceptionally(exception);
 					} else {
-						future.complete(result ? new PoolGiveResult(quest) : new PoolGiveResult("").forceContinue());
+						future.complete(
+								result.isSuccess() ? new PoolGiveResult(quest) : new PoolGiveResult("").forceContinue());
 					}
 				});
 			});

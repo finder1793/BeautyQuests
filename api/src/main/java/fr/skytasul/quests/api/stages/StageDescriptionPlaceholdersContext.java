@@ -1,31 +1,21 @@
 package fr.skytasul.quests.api.stages;
 
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import fr.skytasul.quests.api.options.description.DescriptionSource;
-import fr.skytasul.quests.api.players.PlayerAccount;
+import fr.skytasul.quests.api.questers.Quester;
 import fr.skytasul.quests.api.utils.messaging.MessageType;
 import fr.skytasul.quests.api.utils.messaging.PlaceholdersContext;
-import fr.skytasul.quests.api.utils.messaging.PlaceholdersContext.PlayerPlaceholdersContext;
+import fr.skytasul.quests.api.utils.messaging.PlaceholdersContext.QuesterPlaceholdersContext;
 
-public interface StageDescriptionPlaceholdersContext extends PlaceholdersContext, PlayerPlaceholdersContext {
-
-	@Override
-	@NotNull
-	PlayerAccount getPlayerAccount();
+public interface StageDescriptionPlaceholdersContext extends PlaceholdersContext, QuesterPlaceholdersContext {
 
 	@NotNull
 	DescriptionSource getDescriptionSource();
 
-	static @NotNull StageDescriptionPlaceholdersContext of(boolean replacePluginPlaceholders, @NotNull PlayerAccount account,
+	static @NotNull StageDescriptionPlaceholdersContext of(boolean replacePluginPlaceholders, @NotNull Quester quester,
 			@NotNull DescriptionSource source, @Nullable MessageType messageType) {
 		return new StageDescriptionPlaceholdersContext() {
-
-			@Override
-			public @Nullable Player getActor() {
-				return account.getPlayer();
-			}
 
 			@Override
 			public boolean replacePluginPlaceholders() {
@@ -33,8 +23,8 @@ public interface StageDescriptionPlaceholdersContext extends PlaceholdersContext
 			}
 
 			@Override
-			public @NotNull PlayerAccount getPlayerAccount() {
-				return account;
+			public @NotNull Quester getQuester() {
+				return quester;
 			}
 
 			@Override

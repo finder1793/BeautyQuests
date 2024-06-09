@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import fr.skytasul.quests.api.players.PlayerAccount;
 import fr.skytasul.quests.api.players.PlayersManager;
+import fr.skytasul.quests.api.questers.PlayerQuester;
+import fr.skytasul.quests.api.questers.Quester;
 
 public interface PlaceholdersContext {
 
@@ -60,7 +62,19 @@ public interface PlaceholdersContext {
 		};
 	}
 
-	public interface PlayerPlaceholdersContext extends PlaceholdersContext {
+	public interface QuesterPlaceholdersContext extends PlaceholdersContext {
+
+		@NotNull
+		Quester getQuester();
+
+		@Override
+		default @Nullable CommandSender getActor() {
+			return getQuester() instanceof PlayerQuester ? ((PlayerQuester) getQuester()).getPlayer() : null;
+		}
+
+	}
+
+	public interface PlayerPlaceholdersContext extends PlaceholdersContext, QuesterPlaceholdersContext {
 
 		@Override
 		@Nullable
@@ -69,6 +83,11 @@ public interface PlaceholdersContext {
 		@NotNull
 		default PlayerAccount getPlayerAccount() {
 			return PlayersManager.getPlayerAccount(getActor());
+		}
+
+		@Override
+		default @NotNull Quester getQuester() {
+			return getPlayerAccount();
 		}
 
 	}

@@ -1,21 +1,23 @@
 package fr.skytasul.quests.players;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.StringJoiner;
-import java.util.stream.Stream;
 import fr.skytasul.quests.api.QuestsAPI;
 import fr.skytasul.quests.api.QuestsPlugin;
-import fr.skytasul.quests.api.players.PlayerQuestDatas;
+import fr.skytasul.quests.api.questers.Quester;
 import fr.skytasul.quests.api.quests.Quest;
+import fr.skytasul.quests.api.quests.QuestDatas;
 import fr.skytasul.quests.api.quests.branches.QuestBranch;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.utils.Utils;
 import fr.skytasul.quests.gui.quests.DialogHistoryGUI;
 import fr.skytasul.quests.options.OptionStartDialog;
+import org.jetbrains.annotations.NotNull;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.stream.Stream;
 
-public class PlayerQuestDatasImplementation implements PlayerQuestDatas {
+public class PlayerQuestDatasImplementation implements QuestDatas {
 
 	protected final PlayerAccountImplementation acc;
 	protected final int questID;
@@ -48,12 +50,17 @@ public class PlayerQuestDatasImplementation implements PlayerQuestDatas {
 		this.stage = stage;
 		this.additionalDatas = additionalDatas == null ? new HashMap<>() : additionalDatas;
 		if (questFlow != null) this.questFlow.add(questFlow);
-		if (branch != -1 && stage == -1) QuestsPlugin.getPlugin().getLoggerExpanded().warning("Incorrect quest " + questID + " datas for " + acc.debugName());
+		if (branch != -1 && stage == -1) QuestsPlugin.getPlugin().getLoggerExpanded().warning("Incorrect quest " + questID + " datas for " + acc.getDebugName());
 	}
 
 	@Override
 	public Quest getQuest() {
 		return QuestsAPI.getAPI().getQuestsManager().getQuest(questID);
+	}
+
+	@Override
+	public @NotNull Quester getQuester() {
+		return acc;
 	}
 
 	@Override

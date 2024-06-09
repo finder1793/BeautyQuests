@@ -124,7 +124,7 @@ public class PlayersManagerDB extends AbstractPlayersManager {
 				}
 			}
 		} catch (SQLException ex) {
-			QuestsPlugin.getPlugin().getLoggerExpanded().severe("An error occurred while fetching account datas of " + acc.debugName(), ex);
+			QuestsPlugin.getPlugin().getLoggerExpanded().severe("An error occurred while fetching account datas of " + acc.getDebugName(), ex);
 		}
 	}
 
@@ -498,7 +498,7 @@ public class PlayersManagerDB extends AbstractPlayersManager {
 
 					amount++;
 				}catch (Exception ex) {
-					QuestsPlugin.getPlugin().getLoggerExpanded().severe("Failed to migrate datas for account " + acc.debugName(), ex);
+					QuestsPlugin.getPlugin().getLoggerExpanded().severe("Failed to migrate datas for account " + acc.getDebugName(), ex);
 					failed++;
 				}
 			}

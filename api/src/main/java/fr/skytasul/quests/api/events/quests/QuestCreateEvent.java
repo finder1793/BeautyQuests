@@ -1,4 +1,4 @@
-package fr.skytasul.quests.api.events;
+package fr.skytasul.quests.api.events.quests;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -9,12 +9,14 @@ import fr.skytasul.quests.api.quests.Quest;
 /**
  * Called when a quest is created
  */
-public class QuestCreateEvent extends PlayerQuestEvent implements Cancellable{
+public class QuestCreateEvent extends QuestEvent implements Cancellable {
 
 	private boolean cancel, edit = false;
-	
-	public QuestCreateEvent(@NotNull Player who, @NotNull Quest quest, boolean edit) {
-		super(who, quest);
+	private @NotNull Player creator;
+
+	public QuestCreateEvent(@NotNull Quest quest, @NotNull Player creator, boolean edit) {
+		super(quest);
+		this.creator = creator;
 		this.edit = edit;
 	}
 
@@ -27,20 +29,24 @@ public class QuestCreateEvent extends PlayerQuestEvent implements Cancellable{
 	public void setCancelled(boolean paramBoolean){
 		this.cancel = paramBoolean;
 	}
-	
+
+	public @NotNull Player getCreator() {
+		return creator;
+	}
+
 	public boolean isEdited(){
 		return edit;
 	}
-	
+
 	@Override
 	public HandlerList getHandlers() {
 		return handlers;
 	}
-	
+
 	public static HandlerList getHandlerList() {
 		return handlers;
 	}
-	
+
 	private static final HandlerList handlers = new HandlerList();
 
 }

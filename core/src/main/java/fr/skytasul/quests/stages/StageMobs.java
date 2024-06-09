@@ -14,7 +14,7 @@ import fr.skytasul.quests.api.events.internal.BQMobDeathEvent;
 import fr.skytasul.quests.api.gui.ItemUtils;
 import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.options.description.DescriptionSource;
-import fr.skytasul.quests.api.players.PlayerAccount;
+import fr.skytasul.quests.api.players.PlayersManager;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.stages.StageDescriptionPlaceholdersContext;
 import fr.skytasul.quests.api.stages.creation.StageCreation;
@@ -86,11 +86,13 @@ public class StageMobs extends AbstractCountableStage<Mob<?>> implements Locatab
 	}
 
 	@Override
-	public void started(PlayerAccount acc) {
-		super.started(acc);
-		if (acc.isCurrent() && sendStartMessage()) {
-			MessageUtils.sendRawMessage(acc.getPlayer(), Lang.STAGE_MOBSLIST.toString(), getPlaceholdersRegistry(),
-					StageDescriptionPlaceholdersContext.of(true, acc, DescriptionSource.FORCELINE, MessageType.DefaultMessageType.PREFIXED));
+	public void sendStartMessage(@NotNull Player player) {
+		super.sendStartMessage(player);
+		if (shouldSendStartMessage()) {
+			StageDescriptionPlaceholdersContext context =
+					StageDescriptionPlaceholdersContext.of(true, PlayersManager.getPlayerAccount(player),
+							DescriptionSource.FORCELINE, MessageType.DefaultMessageType.PREFIXED);
+			MessageUtils.sendRawMessage(player, Lang.STAGE_MOBSLIST.toString(), getPlaceholdersRegistry(), context);
 		}
 	}
 

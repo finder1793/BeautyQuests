@@ -332,7 +332,7 @@ public class PlayersManagerYAML extends AbstractPlayersManager {
 			try {
 				savePlayerFile(acc);
 			}catch (Exception e) {
-				QuestsPlugin.getPlugin().getLoggerExpanded().severe("An error ocurred while trying to save " + acc.debugName() + " account file", e);
+				QuestsPlugin.getPlugin().getLoggerExpanded().severe("An error ocurred while trying to save " + acc.getDebugName() + " account file", e);
 			}
 		}
 	}
@@ -347,7 +347,7 @@ public class PlayersManagerYAML extends AbstractPlayersManager {
 			try {
 				savePlayerFile(acc);
 			}catch (IOException e) {
-				QuestsPlugin.getPlugin().getLoggerExpanded().warning("An error ocurred while saving player file " + acc.debugName(), e);
+				QuestsPlugin.getPlugin().getLoggerExpanded().warning("An error ocurred while saving player file " + acc.getDebugName(), e);
 			}
 		});
 	}

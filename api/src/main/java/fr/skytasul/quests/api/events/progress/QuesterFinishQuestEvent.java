@@ -1,28 +1,28 @@
-package fr.skytasul.quests.api.events;
+package fr.skytasul.quests.api.events.progress;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
 import fr.skytasul.quests.api.quests.Quest;
 
 /**
- * Called when a player starts a quest
+ * Called when a quester finish a quest
  */
-public class QuestLaunchEvent extends PlayerQuestEvent {
-	
-	public QuestLaunchEvent(@NotNull Player who, @NotNull Quest quest) {
-		super(who, quest);
+public class QuesterFinishQuestEvent extends QuesterEvent {
+
+	public QuesterFinishQuestEvent(@NotNull Quest quest, @NotNull TopLevelQuester quester) {
+		super(quest, quester);
 	}
-	
+
 	@Override
 	public HandlerList getHandlers() {
 		return handlers;
 	}
-	
+
 	public static HandlerList getHandlerList() {
 		return handlers;
 	}
-	
+
 	private static final HandlerList handlers = new HandlerList();
 
 }

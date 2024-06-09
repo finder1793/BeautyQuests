@@ -6,8 +6,8 @@ import fr.skytasul.quests.api.editors.TextEditor;
 import fr.skytasul.quests.api.editors.parsers.NumberParser;
 import fr.skytasul.quests.api.gui.ItemUtils;
 import fr.skytasul.quests.api.localization.Lang;
-import fr.skytasul.quests.api.players.PlayerAccount;
-import fr.skytasul.quests.api.players.PlayersManager;
+import fr.skytasul.quests.api.questers.Quester;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
 import fr.skytasul.quests.api.stages.AbstractStage;
 import fr.skytasul.quests.api.stages.StageController;
 import fr.skytasul.quests.api.stages.creation.StageCreation;
@@ -40,10 +40,9 @@ public abstract class AbstractEntityStage extends AbstractStage implements Locat
 	}
 
 	protected void event(@NotNull Player p, @NotNull EntityType type) {
-		PlayerAccount acc = PlayersManager.getPlayerAccount(p);
 		if (hasStarted(p) && canUpdate(p)) {
 			if (entity == null || type.equals(entity)) {
-				OptionalInt playerAmount = getPlayerAmountOptional(acc);
+				OptionalInt playerAmount = getAmountOptional(getTopLevelQuester(p));
 				if (!playerAmount.isPresent()) {
 					QuestsPlugin.getPlugin().getLoggerExpanded().warning(p.getName() + " does not have object datas for stage " + toString() + ". This is a bug!");
 				} else if (playerAmount.getAsInt() <= 1) {
@@ -55,14 +54,14 @@ public abstract class AbstractEntityStage extends AbstractStage implements Locat
 		}
 	}
 
-	protected @NotNull OptionalInt getPlayerAmountOptional(@NotNull PlayerAccount acc) {
-		Integer amount = getData(acc, "amount", Integer.class);
+	protected @NotNull OptionalInt getAmountOptional(@NotNull Quester quester) {
+		Integer amount = getData(quester, "amount", Integer.class);
 		return amount == null ? OptionalInt.empty() : OptionalInt.of(amount.intValue());
 	}
 
 	@Override
-	public long getPlayerAmount(@NotNull PlayerAccount account) {
-		return getPlayerAmountOptional(account).orElse(0);
+	public long getQuesterAmount(@NotNull Quester quester) {
+		return getAmountOptional(quester).orElse(0);
 	}
 
 	@Override
@@ -76,8 +75,8 @@ public abstract class AbstractEntityStage extends AbstractStage implements Locat
 	}
 
 	@Override
-	public void initPlayerDatas(@NotNull PlayerAccount acc, @NotNull Map<@NotNull String, @Nullable Object> datas) {
-		super.initPlayerDatas(acc, datas);
+	public void initPlayerDatas(@NotNull TopLevelQuester quester, @NotNull Map<@NotNull String, @Nullable Object> datas) {
+		super.initPlayerDatas(quester, datas);
 		datas.put("amount", amount);
 	}
 

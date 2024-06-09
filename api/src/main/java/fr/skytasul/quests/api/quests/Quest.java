@@ -1,21 +1,24 @@
 package fr.skytasul.quests.api.quests;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import fr.skytasul.quests.api.npcs.BqNpc;
 import fr.skytasul.quests.api.options.OptionSet;
 import fr.skytasul.quests.api.options.QuestOption;
 import fr.skytasul.quests.api.options.description.DescriptionSource;
 import fr.skytasul.quests.api.options.description.QuestDescriptionProvider;
-import fr.skytasul.quests.api.players.PlayerAccount;
+import fr.skytasul.quests.api.questers.Quester;
+import fr.skytasul.quests.api.questers.QuesterProvider;
+import fr.skytasul.quests.api.questers.TopLevelQuester;
 import fr.skytasul.quests.api.quests.branches.QuestBranchesManager;
 import fr.skytasul.quests.api.utils.QuestVisibilityLocation;
 import fr.skytasul.quests.api.utils.messaging.HasPlaceholders;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
+// TODO split data and quester methods
 public interface Quest extends OptionSet, Comparable<Quest>, HasPlaceholders {
 
 	int getId();
@@ -24,8 +27,7 @@ public interface Quest extends OptionSet, Comparable<Quest>, HasPlaceholders {
 
 	void delete(boolean silently, boolean keepDatas);
 
-	@NotNull
-	QuestBranchesManager getBranchesManager();
+	public @NotNull QuestBranchesManager getBranchesManager();
 
 	public void addOption(@NotNull QuestOption<?> option);
 
@@ -53,29 +55,31 @@ public interface Quest extends OptionSet, Comparable<Quest>, HasPlaceholders {
 
 	public boolean canBypassLimit();
 
-	public boolean hasStarted(@NotNull PlayerAccount acc);
+	public @NotNull QuesterProvider getQuesterProvider();
 
-	public boolean hasFinished(@NotNull PlayerAccount acc);
+	public boolean hasStarted(@NotNull Quester quester);
 
-	public @NotNull String getDescriptionLine(@NotNull PlayerAccount acc, @NotNull DescriptionSource source);
+	public boolean hasFinished(@NotNull Quester quester);
 
-	public boolean canStart(@NotNull Player player, boolean sendMessage);
+	public @NotNull String getDescriptionLine(@NotNull Quester quester, @NotNull DescriptionSource source);
 
-	public boolean cancelPlayer(@NotNull PlayerAccount acc);
+	public @NotNull QuestStartResult testStart(@NotNull Player player);
 
-	public @NotNull CompletableFuture<Boolean> resetPlayer(@NotNull PlayerAccount acc);
+	public @NotNull CompletableFuture<QuestStartResult> attemptStart(@NotNull Player player);
 
-	public @NotNull CompletableFuture<Boolean> attemptStart(@NotNull Player player);
+	public @NotNull CompletableFuture<Boolean> reset(@NotNull TopLevelQuester quester);
+
+	public boolean cancel(@NotNull TopLevelQuester quester);
 
 	public void doNpcClick(@NotNull Player player);
+
+	public void start(@NotNull Player player, boolean silently);
 
 	public default void start(@NotNull Player player) {
 		start(player, false);
 	}
 
-	public void start(@NotNull Player player, boolean silently);
-
-	public void finish(@NotNull Player player);
+	public void finish(@NotNull TopLevelQuester quester);
 
 	@Override
 	default int compareTo(Quest o) {

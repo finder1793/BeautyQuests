@@ -17,9 +17,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.api.QuestsPlugin;
-import fr.skytasul.quests.api.players.PlayerAccount;
-import fr.skytasul.quests.api.players.PlayerQuestDatas;
+import fr.skytasul.quests.api.questers.Quester;
 import fr.skytasul.quests.api.quests.Quest;
+import fr.skytasul.quests.api.quests.QuestDatas;
 import fr.skytasul.quests.api.quests.QuestsManager;
 import fr.skytasul.quests.api.utils.QuestVisibilityLocation;
 import fr.skytasul.quests.api.utils.Utils;
@@ -28,18 +28,18 @@ import fr.skytasul.quests.options.OptionStartable;
 import fr.skytasul.quests.options.OptionStarterNPC;
 
 public class QuestsManagerImplementation implements QuestsManager {
-	
+
 	private final List<QuestImplementation> quests = new ArrayList<>();
 	private final AtomicInteger lastID = new AtomicInteger();
-	
+
 	private final BeautyQuests plugin;
 	private final File saveFolder;
-	
+
 	public QuestsManagerImplementation(BeautyQuests plugin, int lastID, File saveFolder) throws IOException {
 		this.plugin = plugin;
 		this.lastID.set(lastID);
 		this.saveFolder = saveFolder;
-		
+
 		try (Stream<Path> files = Files.walk(saveFolder.toPath(), Integer.MAX_VALUE, FileVisitOption.FOLLOW_LINKS)) {
 			files.filter(Files::isRegularFile).filter(path -> !path.getFileName().toString().contains("backup")).filter(path -> "yml".equalsIgnoreCase(Utils.getFilenameExtension(path.getFileName().toString()).orElse(null))).forEach(path -> {
 				BeautyQuests.getInstance().resetLoadingFailure();
@@ -57,25 +57,25 @@ public class QuestsManagerImplementation implements QuestsManager {
 			});
 		}
 	}
-	
+
 	public int getFreeQuestID() {
 		int id = getLastID();
-		
+
 		if (quests.stream().noneMatch(quest -> quest.getId() == id)) return id;
-		
+
 		QuestsPlugin.getPlugin().getLoggerExpanded().warning("Quest id " + id + " already taken, this should not happen.");
 		incrementLastID();
 		return getFreeQuestID();
 	}
-	
+
 	public int getLastID() {
 		return lastID.get();
 	}
-	
+
 	public int incrementLastID() {
 		return lastID.incrementAndGet();
 	}
-	
+
 	public int updateAll() throws IOException {
 		int updated = 0;
 		for (QuestImplementation quest : quests) {
@@ -83,22 +83,22 @@ public class QuestsManagerImplementation implements QuestsManager {
 		}
 		return updated;
 	}
-	
+
 	public @NotNull BeautyQuests getPlugin() {
 		return plugin;
 	}
-	
+
 	@Override
 	public @NotNull File getSaveFolder() {
 		return saveFolder;
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	@Override
 	public @NotNull List<Quest> getQuests() {
 		return (List) quests;
 	}
-	
+
 	public @NotNull List<QuestImplementation> getQuestsRaw() {
 		return quests;
 	}
@@ -106,12 +106,12 @@ public class QuestsManagerImplementation implements QuestsManager {
 	public int getQuestsAmount() {
 		return quests.size();
 	}
-	
+
 	@Override
 	public @Nullable QuestImplementation getQuest(int id) {
 		return quests.stream().filter(x -> x.getId() == id).findAny().orElse(null);
 	}
-	
+
 	public void unloadQuests() {
 		for (QuestImplementation quest : quests) {
 			try {
@@ -121,11 +121,11 @@ public class QuestsManagerImplementation implements QuestsManager {
 			}
 		}
 	}
-	
+
 	public void removeQuest(@NotNull Quest quest) {
 		quests.remove(quest);
 	}
-	
+
 	@Override
 	public void addQuest(@NotNull Quest quest) {
 		QuestImplementation qu = (QuestImplementation) quest;
@@ -137,67 +137,73 @@ public class QuestsManagerImplementation implements QuestsManager {
 		}
 		qu.load();
 	}
-	
+
 	@Override
-	public @NotNull @Unmodifiable List<Quest> getQuestsStarted(PlayerAccount acc) {
-		return getQuestsStarted(acc, false, false);
+	public @NotNull @Unmodifiable List<Quest> getQuestsStarted(Quester quester) {
+		return getQuestsStarted(quester, false, false);
 	}
-	
+
 	@Override
-	public @NotNull @Unmodifiable List<Quest> getQuestsStarted(@NotNull PlayerAccount acc, boolean hide,
+	public @NotNull @Unmodifiable List<Quest> getQuestsStarted(@NotNull Quester quester, boolean hide,
 			boolean withoutScoreboard) {
-		return acc.getQuestsDatas()
+		return quester.getQuestsDatas()
 				.stream()
-				.filter(PlayerQuestDatas::hasStarted)
-				.map(PlayerQuestDatas::getQuest)
+				.filter(QuestDatas::hasStarted)
+				.map(QuestDatas::getQuest)
 				.filter(Objects::nonNull)
 				.filter(Quest::isValid)
 				.filter(quest -> !hide || !quest.isHidden(QuestVisibilityLocation.TAB_IN_PROGRESS))
 				.filter(quest -> !withoutScoreboard || quest.isScoreboardEnabled())
 				.collect(Collectors.toList());
 	}
-	
+
 	@Override
-	public void updateQuestsStarted(@NotNull PlayerAccount acc, boolean withoutScoreboard, @NotNull List<Quest> list) {
+	public void updateQuestsStarted(@NotNull Quester quester, boolean withoutScoreboard, @NotNull List<Quest> list) {
 		for (Iterator<Quest> iterator = list.iterator(); iterator.hasNext();) {
 			QuestImplementation existing = (QuestImplementation) iterator.next();
-			if (!existing.hasStarted(acc) || (withoutScoreboard && !existing.isScoreboardEnabled())) iterator.remove();
+			if (!existing.hasStarted(quester) || (withoutScoreboard && !existing.isScoreboardEnabled()))
+				iterator.remove();
 		}
-		
+
 		for (QuestImplementation qu : quests) {
 			if (withoutScoreboard && !qu.isScoreboardEnabled()) continue;
-			if (!list.contains(qu) && qu.hasStarted(acc)) list.add(qu);
+			if (!list.contains(qu) && qu.hasStarted(quester))
+				list.add(qu);
 		}
 	}
-	
+
 	@Override
-	public int getStartedSize(@NotNull PlayerAccount acc) {
+	public int getStartedSize(@NotNull Quester quester) {
 		return (int) quests
 				.stream()
-				.filter(quest -> !quest.canBypassLimit() && quest.hasStarted(acc))
+				.filter(quest -> !quest.canBypassLimit() && quest.hasStarted(quester))
 				.count();
 	}
-	
+
 	@Override
-	public @NotNull @Unmodifiable List<Quest> getQuestsFinished(@NotNull PlayerAccount acc, boolean hide) {
+	public @NotNull @Unmodifiable List<Quest> getQuestsFinished(@NotNull Quester quester, boolean hide) {
 		return quests
 				.stream()
-				.filter(quest -> !(hide && quest.isHidden(QuestVisibilityLocation.TAB_FINISHED)) && quest.hasFinished(acc))
+				.filter(quest -> !(hide && quest.isHidden(QuestVisibilityLocation.TAB_FINISHED))
+						&& quest.hasFinished(quester))
 				.collect(Collectors.toList());
 	}
-	
+
 	@Override
-	public @NotNull @Unmodifiable List<Quest> getQuestsNotStarted(@NotNull PlayerAccount acc, boolean hide,
+	public @NotNull @Unmodifiable List<Quest> getQuestsNotStarted(@NotNull Quester quester, boolean hide,
 			boolean clickableAndRedoable) {
 		return quests
 				.stream()
 				.filter(quest -> {
 					if (hide && quest.isHidden(QuestVisibilityLocation.TAB_NOT_STARTED)) return false;
-					if (quest.hasStarted(acc)) return false;
-					if (!quest.hasFinished(acc)) return true;
-					return clickableAndRedoable && quest.isRepeatable() && quest.getOptionValueOrDef(OptionStartable.class) && quest.testTimer(acc, false);
+					if (quest.hasStarted(quester))
+						return false;
+					if (!quest.hasFinished(quester))
+						return true;
+					return clickableAndRedoable && quest.getOptionValueOrDef(OptionStartable.class)
+							&& quest.testTimer(quester).isSuccess();
 				})
 				.collect(Collectors.toList());
 	}
-	
+
 }

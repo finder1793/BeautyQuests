@@ -1,18 +1,5 @@
 package fr.skytasul.quests.npcs;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.Predicate;
-import org.apache.commons.lang.StringUtils;
-import org.bukkit.Location;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.QuestsConfigurationImplementation;
 import fr.skytasul.quests.api.AbstractHolograms;
@@ -35,6 +22,19 @@ import fr.skytasul.quests.options.OptionHologramText;
 import fr.skytasul.quests.options.OptionStarterNPC;
 import fr.skytasul.quests.structure.pools.QuestPoolImplementation;
 import fr.skytasul.quests.utils.QuestUtils;
+import org.apache.commons.lang.StringUtils;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Predicate;
 
 public class BqNpcImplementation implements Located.LocatedEntity, BqNpc {
 
@@ -145,7 +145,7 @@ public class BqNpcImplementation implements Located.LocatedEntity, BqNpc {
 						continue;
 					playersInRadius.add(p);
 					for (Entry<Quest, List<Player>> quest : quests.entrySet()) {
-						if (quest.getKey().canStart(p, false)) {
+						if (quest.getKey().testStart(p).isSuccess()) {
 							quest.getValue().add(p);
 							break;
 						}
@@ -253,7 +253,7 @@ public class BqNpcImplementation implements Located.LocatedEntity, BqNpc {
 		if (hologramLaunch.enabled && quest.hasOption(OptionHologramLaunch.class)) hologramLaunch.setItem(quest.getOption(OptionHologramLaunch.class).getValue());
 		if (hologramLaunchNo.enabled && quest.hasOption(OptionHologramLaunchNo.class)) hologramLaunchNo.setItem(quest.getOption(OptionHologramLaunchNo.class).getValue());
 		hologramText.visible = true;
-		addStartablePredicate(p -> quest.canStart(p, false), quest);
+		addStartablePredicate(p -> quest.testStart(p).isSuccess(), quest);
 		updatedObjects();
 	}
 

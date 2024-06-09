@@ -1,33 +1,33 @@
 package fr.skytasul.quests.options;
 
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import fr.skytasul.quests.api.localization.Lang;
 import fr.skytasul.quests.api.options.QuestOptionBoolean;
 import fr.skytasul.quests.api.players.PlayerAccount;
 import fr.skytasul.quests.api.players.PlayersManager;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 
 public class OptionFailOnDeath extends QuestOptionBoolean implements Listener {
-	
+
 	@Override
 	public String getName() {
 		return Lang.failOnDeath.toString();
 	}
-	
+
 	@Override
 	public String getDescription() {
 		return Lang.failOnDeathLore.toString();
 	}
-	
+
 	@EventHandler
 	public void onDeath(PlayerDeathEvent e) {
 		PlayerAccount acc = PlayersManager.getPlayerAccount(e.getEntity());
 		if (acc == null) return;
 		if (getAttachedQuest().hasStarted(acc)) {
-			getAttachedQuest().cancelPlayer(acc);
+			getAttachedQuest().cancel(getAttachedQuest().getQuesterProvider().getTopLevelQuester(e.getEntity()));
 			Lang.QUEST_FAILED.send(e.getEntity(), getAttachedQuest());
 		}
 	}
-	
+
 }
