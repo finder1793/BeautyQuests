@@ -1,44 +1,33 @@
-import fr.skytasul.quests.api.npcs.BqInternalNpc;
+package fr.skytasul.quests.npcs;
+
 import fr.skytasul.quests.api.npcs.BqInternalNpcFactory;
-import fr.skytasul.quests.api.npcs.BqInternalNpcFactoryCreatable;
+import fr.skytasul.quests.api.npcs.BqInternalNpc;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import java.util.Collection;
 import java.util.UUID;
 
-public class PacketNPCFactory implements BqInternalNpcFactory, BqInternalNpcFactoryCreatable {
-    
+public class PacketNPCFactory implements BqInternalNpcFactory {
+
     @Override
-    public String getName() {
-        return "Packet NPCs";
+    public BqInternalNpc create(String id, Location location) {
+        return new PacketNPC(id, location);
+    }
+
+    @Override 
+    public boolean isValidId(String id) {
+        try {
+            Integer.parseInt(id);
+            return true;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
     }
 
     @Override
-    public Collection<String> getIDs() {
-        return PacketNPCManager.getInstance().getNPCIds();
+    public String generateId() {
+        return String.valueOf(System.currentTimeMillis());
     }
 
-    @Override
-    public BqInternalNpc fetchNPC(String id) {
-        return PacketNPCManager.getInstance().getNPC(id);
-    }
-
-    @Override
-    public boolean isNPC(Entity entity) {
-        return PacketNPCManager.getInstance().isNPC(entity);
-    }
-
-    @Override
-    public BqInternalNpc create(Location location, EntityType type, String name, String skin) {
-        String id = UUID.randomUUID().toString();
-        PacketNPC npc = new PacketNPC(id, location, type, name);
-        PacketNPCManager.getInstance().registerNPC(npc);
-        return npc;
-    }
-
-    @Override
-    public int getTimeToWaitForNPCs() {
-        return 0;
-    }
 }
