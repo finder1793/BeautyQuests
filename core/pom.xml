@@ -28,9 +28,9 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>3.5.1</version>
 				<configuration>
-        			<createDependencyReducedPom>false</createDependencyReducedPom>
+					<createDependencyReducedPom>false</createDependencyReducedPom>
 					<relocations>
 						<relocation>
 							<pattern>org.bstats</pattern>
@@ -67,9 +67,12 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.0</version>
+				<version>3.12.1</version>
 				<configuration>
-					<parameters>true</parameters> <!-- For commands -->
+					<parameters>true</parameters>
+					<release>21</release>
+					<fork>true</fork>
+					<executable>${JAVA_HOME}/bin/javac</executable>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -92,6 +95,12 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
+	
+		<repository>
+    		<id>codemc-snapshots</id>
+    		<url>https://repo.codemc.io/repository/maven-snapshots/</url>
+		</repository>
+			
 	</repositories>
 
 	<dependencies>
@@ -172,6 +181,23 @@
 			<artifactId>SpigotUpdateChecker</artifactId>
 			<version>3.0.3</version>
 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+    		<groupId>com.github.retrooper</groupId>
+    		<artifactId>packetevents</artifactId>
+    		<version>2.0.0</version>
+    		<scope>provided</scope>
+		</dependency>
+    	<dependency>
+        	<groupId>fr.skytasul</groupId>
+        	<artifactId>beautyquests-api</artifactId>
+        	<version>${project.version}</version>
+    	</dependency>
+    
+		<dependency>
+	    	<groupId>com.github.Revxrsal.Lamp</groupId>
+	    	<artifactId>brigadier</artifactId>
+	    	<version>3.3.3</version>
 		</dependency>
 	</dependencies>
 </project>
